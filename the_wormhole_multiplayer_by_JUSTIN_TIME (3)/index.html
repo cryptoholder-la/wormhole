@@ -1,0 +1,1811 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wormhole Multiplayer Pro</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <script src="spaceBackground.js"></script>
+  <style>
+    .game-controls {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+    }
+
+    .control-button {
+      background: rgba(0, 255, 0, 0.2);
+      border: 2px solid #0f0;
+      color: #0f0;
+      padding: 10px 20px;
+      margin: 5px;
+      cursor: pointer;
+      font-family: 'Press Start 2P', cursive;
+      transition: all 0.3s;
+    }
+
+    .control-button:hover {
+      background: rgba(0, 255, 0, 0.4);
+    }
+
+    .pause-menu {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      padding: 20px;
+      border: 2px solid #0f0;
+      color: #0f0;
+      text-align: center;
+      font-family: 'Press Start 2P', cursive;
+      z-index: 1000;
+    }
+
+    .pulse {
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.1);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .confetti {
+      position: fixed;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    .level-indicator {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: #0f0;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 20px;
+      z-index: 100;
+    }
+
+    .power-meter {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      width: 200px;
+      height: 20px;
+      border: 2px solid #0f0;
+      background: rgba(0, 255, 0, 0.2);
+    }
+
+    .power-fill {
+      height: 100%;
+      background: #0f0;
+      transition: width 0.3s;
+    }
+
+    .gear-icon {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      font-size: 24px;
+      color: #0f0;
+      cursor: pointer;
+      z-index: 1000;
+    }
+
+    .settings-menu {
+      display: none;
+      position: fixed;
+      bottom: 60px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.9);
+      border: 2px solid #0f0;
+      padding: 20px;
+      color: #0f0;
+      z-index: 999;
+    }
+
+    .setting-option {
+      margin: 10px 0;
+    }
+
+    .sound-uploads {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 5px;
+    }
+
+    .sound-uploads label {
+      font-size: 12px;
+      color: #0f0;
+    }
+
+    .setting-option input[type="file"] {
+      color: #0f0;
+      background: rgba(0, 255, 0, 0.1);
+      border: 1px solid #0f0;
+      padding: 5px;
+      margin-top: 5px;
+      width: 100%;
+    }
+
+    .setting-option input[type="file"]::-webkit-file-upload-button {
+      background: #0f0;
+      color: black;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+
+    .touch-controls {
+      display: none;
+      position: fixed;
+      bottom: 100px;
+      left: 0;
+      right: 0;
+      text-align: center;
+    }
+
+    .touch-button {
+      font-size: 40px;
+      color: #0f0;
+      margin: 0 40px;
+      opacity: 0.5;
+    }
+
+    #gameCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      background: transparent;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+      background-image: url('/a/882cd267-a032-4de2-99f4-e050dcea30e6');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    .leaderboard {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      border: 2px solid #0f0;
+      padding: 20px;
+      color: #0f0;
+      font-family: 'Press Start 2P';
+      display: none;
+      z-index: 1000;
+    }
+
+    .score-popup {
+      position: absolute;
+      color: #0f0;
+      font-family: 'Press Start 2P';
+      font-size: 16px;
+      pointer-events: none;
+      animation: scoreFloat 1s forwards;
+    }
+
+    @keyframes scoreFloat {
+      0% {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+    }
+
+    .game-over {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      border: 2px solid #0f0;
+      padding: 40px;
+      color: #0f0;
+      text-align: center;
+      font-family: 'Press Start 2P';
+      display: none;
+      z-index: 1000;
+    }
+
+    .ranking {
+      color: #ff0;
+      margin-top: 10px;
+    }
+
+    .bonus-text {
+      position: absolute;
+      color: #ff0;
+      font-family: 'Press Start 2P';
+      font-size: 24px;
+      pointer-events: none;
+      animation: bonusFloat 2s forwards;
+    }
+
+    @keyframes bonusFloat {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.5);
+        opacity: 0.8;
+      }
+
+      100% {
+        transform: scale(2);
+        opacity: 0;
+      }
+    }
+
+    /* Additional CSS for starry space background */
+    #space-bg-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -2;
+      pointer-events: none;
+      background: transparent;
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Space background canvas, rendered behind all content -->
+  <canvas id="space-bg-canvas"></canvas>
+  <div class="game-controls">
+    <button id="pauseButton" class="control-button" title="pause">
+      <i class="fas fa-pause"></i>
+    </button>
+    <button id="startButton" class="control-button pulse" title="pulse">
+      <i class="fas fa-play"></i>
+    </button>
+    <button id="demoToggle" class="control-button" title="toggle">
+      <i class="fas fa-robot"></i>
+    </button>
+  </div>
+  <div class="level-indicator">LEVEL: <span id="levelDisplay">1</span></div>
+  <div class="power-meter">
+    <div id="powerFill" class="power-fill" style="width: 100%"></div>
+  </div>
+  <canvas id="gameCanvas"></canvas>
+  <div id="pauseMenu" class="pause-menu">
+    <h2>PAUSED</h2>
+    <button onclick="resumeGame()" class="control-button">RESUME</button>
+    <button onclick="restartGame()" class="control-button">RESTART</button>
+  </div>
+  <div id="settingsButton" class="gear-icon">
+    <i class="fas fa-cog"></i>
+  </div>
+
+  <div id="settingsMenu" class="settings-menu">
+    <h3>Settings</h3>
+    <div class="setting-option">
+      <label>Controls:</label>
+      <select id="controlType">
+        <option value="mouseKeyboard">Mouse + Keyboard</option>
+        <option value="touchscreen">Touch Screen</option>
+      </select>
+    </div>
+    <div class="setting-option">
+      <label>Music URL:</label>
+      <input type="text" id="musicUrl" placeholder="Enter YouTube/SoundCloud URL">
+      <button onclick="setMusic()">Set Music</button>
+    </div>
+    <div class="setting-option">
+      <label>Sound Effects:</label>
+      <input type="checkbox" id="soundEnabled" checked>
+    </div>
+    <div class="setting-option">
+      <label>Enemy 3D Model:</label>
+      <input type="file" id="enemyModelUpload" accept=".glb,.gltf">
+    </div>
+    <div class="setting-option">
+      <label>Custom Sounds:</label>
+      <div class="sound-uploads">
+        <label>Laser Sound:</label>
+        <input type="file" id="laserSoundUpload" accept="audio/mp3">
+        <label>Explosion Sound:</label>
+        <input type="file" id="explosionSoundUpload" accept="audio/mp3">
+        <label>Level Up Sound:</label>
+        <input type="file" id="levelUpSoundUpload" accept="audio/mp3">
+      </div>
+    </div>
+    <div class="setting-option">
+      <label>Custom Font:</label>
+      <input type="file" id="fontUpload" accept=".ttf,.otf,.woff,.woff2">
+    </div>
+  </div>
+
+  <div id="leaderboard" class="leaderboard"></div>
+
+  <div id="musicPlaylistDisplay" style="display: none; position: fixed; top:80px; right:20px; background:rgba(0,0,0,0.7); border:2px solid #0f0; color:#0f0; font-family:'Press Start 2P'; padding:16px; z-index: 1100; min-width: 250px;">
+    <b>Music Playlist</b>
+    <ul id="playlistList" style="margin:12px 0 0 0; padding-left: 0; list-style:none; max-height:120px; overflow:auto;"></ul>
+    <button id="nextTrackBtn" class="control-button" style="width:100%;">Next Track</button>
+    <button id="closePlaylistBtn" class="control-button" style="width:100%;">Close</button>
+  </div>
+  <input type="file" id="musicUpload" accept="audio/*" multiple style="display: none;" />
+
+  <script>
+    // ========== THREE.js Scene Setup with Late tubePoints Initialization ==========
+
+    /* @tweakable The field of view of the 3D Perspective Camera */
+    let THREEJS_CAMERA_FOV = 75;
+
+    /* @tweakable Z position of the 3D camera */
+    let THREEJS_CAMERA_Z = 500;
+
+    /* @tweakable Tube geometry radial segments (smoothness of tube mesh) */
+    let TUBE_RADIAL_SEGMENTS = 8;
+
+    /* @tweakable Tube geometry curve segments (how smooth the field path is) */
+    let TUBE_CURVE_SEGMENTS = 64;
+
+    /* @tweakable Tube mesh radius (size/width of 3D tube) */
+    let TUBE_RADIUS = 2;
+
+    /* @tweakable Color of neon tube mesh */
+    let TUBE_MESH_COLOR = 0x2020ff;
+
+    /* @tweakable Emissive color of neon tube mesh */
+    let TUBE_MESH_EMISSIVE = 0x80d0ff;
+
+    /* @tweakable Neon tube opacity (0.0–1.0) */
+    let TUBE_MESH_OPACITY = 0.8;
+
+    /* @tweakable Initial enemy model emissive color */
+    let ENEMY_GLB_EMISSIVE_COLOR = 0xff0000;
+
+    /* @tweakable Initial enemy model emissive intensity */
+    let ENEMY_GLB_EMISSIVE_INTENSITY = 2.0;
+
+    // ========== MAIN GAME STATE (declare variables at the VERY TOP) ==========
+    // ----- Canvas/context and early variables (for use anywhere!) -----
+    /** @type {HTMLCanvasElement} */
+    const canvas = document.getElementById('gameCanvas');
+    /** @type {CanvasRenderingContext2D} */
+    const ctx = canvas.getContext('2d');
+
+    // --------- 3D/THREE.js variables --------
+    let scene, camera, renderer, tubeGeometry, tubeMaterial, neonTube;
+    let mixer, clock = new THREE.Clock();
+    let enemyModels = []; // glTF enemies for three.js
+
+    // Laser 3D variables
+    const laserGeometry = new THREE.CylinderGeometry(0.1, 0.1, 1, 32);
+    const laserMaterial = new THREE.MeshBasicMaterial({
+      color: 0x00ffff,
+      transparent: true,
+      opacity: 0.8
+    });
+
+    // ========== Declare tweakable tubePoints after canvas! ==========
+    /**
+     * @tweakable Tube path points for the current level (auto-regenerated on level change)
+     * (This is used in all drawing and gameplay calculations.)
+     */
+    let tubePoints = [];
+
+    // ----------- Everything else ------------
+    // (leave the rest of critical variables as-is, since they're already after canvas/tubePoints)
+    /**
+     * @tweakable Length ("depth") of the tube perspective
+     */
+    let TUBE_DEPTH = 16000;
+
+    /**
+     * @tweakable Whether the game starts in DEMO/AI mode
+     */
+    let DEMO_MODE_AT_START = true;
+
+    /**
+     * @tweakable If true, DEMO mode auto-plays the music at start
+     */
+    let DEMO_MODE_PLAYS_MUSIC = true;
+
+    /**
+     * @tweakable AI: How often (in seconds) does the AI attempt to move
+     */
+    let DEMO_AI_MOVE_INTERVAL = 0.44;
+
+    /**
+     * @tweakable AI: How often (in seconds) does the AI attempt to shoot
+     */
+    let DEMO_AI_LASER_INTERVAL = 1.20;
+
+    /**
+     * @tweakable AI: Probability per laser interval to shoot (0-1)
+     */
+    let DEMO_AI_SHOOT_PROB = 0.56;
+
+    /**
+     * @tweakable AI: Probability per pause interval to toggle pause (0-1)
+     */
+    let DEMO_AI_PAUSE_PROB = 0.30;
+
+    /**
+     * @tweakable AI: How often (in seconds) does the AI attempt to pause/resume
+     */
+    let DEMO_AI_PAUSE_INTERVAL = 9.2;
+
+    // Main game variables
+    /**
+     * @tweakable Should the game start immediately (true) or wait for user input (false)?
+     */
+    let AUTO_START_GAME = false;
+
+    /** @tweakable Main 'game started' state. */
+    let gameStarted = false;
+
+    /** @tweakable Paused state for game loop. */
+    let isPaused = false;
+
+    /** @tweakable Whether the player is dead/game has ended. */
+    let gameOver = false;
+    /** @tweakable Player score */
+    let score = 0;
+    /** @tweakable Current game level */
+    let currentLevel = 1;
+    /** @tweakable Last update time (ms) */
+    let lastTime = 0;
+    /** @tweakable Delta time (ms) */
+    let deltaTime = 0;
+    /** @tweakable Kill count on current level */
+    let killCount = 0;
+    /** @tweakable Player tube segment index */
+    let playerSegment = 0;
+    /** @tweakable Current tube rotation angle */
+    let tubeRotation = 0;
+    /** @tweakable Array of celebratory/score-explosion particles */
+    let particles = [];
+    /** @tweakable Array of current enemies in play */
+    let enemies = [];
+    /** @tweakable Array of all active laser bullets */
+    let bullets = [];
+
+    /** @tweakable Current player laser power. */
+    let laserPower = 100; // initial/highest power
+
+    // ---- BEGIN TWEAKABLES ----
+
+    /**
+     * @tweakable Default list of available music tracks (shown in playlist on load).
+     * You can re-order and comment out tracks below to change default game playlist.
+     */
+    const DEFAULT_PLAYLIST_TRACKS = [
+      { 
+        name: "Island Party", 
+        src: "/Island Party.mp3", 
+        /* @tweakable Whether this track is included in the playlist by default */ 
+        enabled: true
+      },
+      { name: "Insert Coin", src: "/Insert Coin.mp3", enabled: true },
+      { name: "Pixel Play", src: "/Pixel Play.mp3", enabled: true },
+      { name: "Volt", src: "/Volt.mp3", enabled: true },
+      { name: "Vivid Victory", src: "/Vivid Victory.mp3", enabled: true },
+      { name: "Fading Exit", src: "/Fading Exit.mp3", enabled: true },
+      { name: "Vivid Victory (Remix)", src: "/Vivid Victory (1).mp3", enabled: true },
+      { name: "Step Up!", src: "/STEP UP BY JUSTIN TIME (1).mp3", enabled: true },
+      { name: "High Score", src: "/High Score.mp3", enabled: true },
+      { name: "Arcade", src: "/Arcade (1).mp3", enabled: true },
+      { name: "Pixelheart", src: "/Pixelheart.mp3", enabled: true },
+      { name: "Don't Talk to Me", src: "/Don't_Talk_to_Me_(1)[1].mp3", enabled: true }
+    ];
+
+    /**
+     * @tweakable If true, use only tracks where enabled=true in DEFAULT_PLAYLIST_TRACKS
+     */
+    let ONLY_INCLUDE_ENABLED_TRACKS = true;
+
+    /** 
+     * @tweakable If true, playlist will repeat after the last track is played.
+     */
+    let PLAYLIST_REPEAT = true;
+
+    /** 
+     * @tweakable Highlight color for currently playing track in the playlist UI.
+     */
+    let PLAYLIST_HIGHLIGHT_COLOR = "#2f0";
+
+    /** 
+     * @tweakable Maximum number of visible playlist items (before scrolling is enabled).
+     */
+    let PLAYLIST_MAX_VISIBLE_ITEMS = 6;
+
+    /**
+     * @tweakable Should playlist song titles be displayed in ALL CAPS?
+     */
+    let PLAYLIST_TITLES_ALL_CAPS = false;
+
+    /**
+     * @tweakable Default index of track that auto-plays when game starts (0=first, 1=second, ...).
+     */
+    let DEFAULT_FIRST_TRACK_INDEX = 0;
+
+    /**
+     * @tweakable Global music volume (0.0 = muted, 1.0 = max).
+     */
+    let GAME_MUSIC_VOLUME = 0.77;
+
+    /**
+     * @tweakable Mute game music at start? (Player can unmute.)
+     */
+    let GAME_MUSIC_MUTED = false;
+
+    /**
+     * @tweakable Show playlist UI when game starts.
+     */
+    let SHOW_PLAYLIST_ON_START = false;
+
+    /**
+     * @tweakable If true, uploaded music tracks are shown before bundled MP3 assets.
+     */
+    let USER_UPLOADS_FIRST = true;
+
+    /**
+     * @tweakable Confetti particle count for celebrations
+     */
+    let CONFETTI_PARTICLE_COUNT = 22;
+    /**
+     * @tweakable Array of confetti colors
+     */
+    let CONFETTI_COLORS = [
+      "#0ff", "#0f0", "#ff0", "#f0f", "#08f", "#fff", "#fa0"
+    ];
+    /**
+     * @tweakable Min/max confetti size range [min, max]
+     */
+    let CONFETTI_SIZE_RANGE = [5, 14];
+    /**
+     * @tweakable Confetti movement animation duration (ms)
+     */
+    let CONFETTI_ANIMATION_DURATION = 900;
+    /**
+     * @tweakable Spread of confetti particles in degrees
+     */
+    let CONFETTI_SPREAD_DEGREES = 170;
+    /**
+     * @tweakable Gravity applied to confetti particles
+     */
+    let CONFETTI_GRAVITY = 0.25;
+    /**
+     * @tweakable Minimum random starting level for a session
+     */
+    let RANDOM_LEVEL_START_MIN = 3;
+    /**
+     * @tweakable Maximum random starting level for a session
+     */
+    let RANDOM_LEVEL_START_MAX = 8;
+    /**
+     * @tweakable Multiplier for enemy speed per level
+     */
+    let ENEMY_SPEED_MULTIPLIER = 1.0;
+    /**
+     * @tweakable Number of tube segments at base difficulty
+     */
+    let BASE_TUBE_SEGMENTS = 16;
+    /**
+     * @tweakable Energy (power) cost per laser shot
+     */
+    let LASER_POWER_COST = 5;
+    /**
+     * @tweakable Laser power regeneration rate per frame
+     */
+    let LASER_POWER_REGEN = 0.1;
+    /**
+     * @tweakable Base score awarded for destroying enemy
+     */
+    let ENEMY_KILL_SCORE = 100;
+    /**
+     * @tweakable Number of kills to level up
+     */
+    let KILLS_TO_LEVEL_UP = 50;
+    /**
+     * @tweakable Maximum laser power capacity
+     */
+    let LASER_POWER_MAX = 100;
+    /**
+     * @tweakable Player circle radius (px)
+     */
+    let PLAYER_RADIUS = 15;
+    /**
+     * @tweakable Bullet radius (px)
+     */
+    let BULLET_RADIUS = 5;
+    /**
+     * @tweakable Enemy sprite/circle radius (px)
+     */
+    let ENEMY_RADIUS = 12;
+    /**
+     * @tweakable Title font for start screen and main label
+     */
+    let TITLE_FONT = '40px "Press Start 2P"';
+    /**
+     * @tweakable HUD font for score and level info
+     */
+    let HUD_FONT = '20px "Press Start 2P"';
+    /**
+     * @tweakable Opacity of the game play area background (0=none, 1=solid)
+     */
+    let GAME_BG_OPACITY = 0.3;
+    /**
+     * @tweakable Background color of gameplay canvas
+     */
+    let GAME_BG_COLOR = 'rgba(0, 0, 51, 0.3)';
+    /**
+     * @tweakable Font for main game over and info text
+     */
+    let GAME_FONT = '40px "Press Start 2P"';
+    /**
+     * @tweakable Font for score display
+     */
+    let GAME_SCORE_FONT = '20px "Press Start 2P"';
+
+    /**
+     * @tweakable Global sound effect volume (0.0 = silent, 1.0 = max)
+     */
+    let SFX_VOLUME = 0.7;
+    /**
+     * @tweakable Relative explosion volume
+     */
+    let EXPLOSION_VOLUME = 1.0;
+    /**
+     * @tweakable Relative laser sfx volume
+     */
+    let LASER_VOLUME = 0.6;
+    /**
+     * @tweakable Level up sound effect volume
+     */
+    let LEVEL_UP_VOLUME = 1.0;
+    /**
+     * @tweakable Mute all SFX globally
+     */
+    let MUTE_ALL_SFX = false;
+    /**
+     * @tweakable Minimum time between SFX plays (ms) to avoid stutter
+     */
+    let SFX_MIN_INTERVAL_MS = 90;
+
+    // --- END TWEAKABLES ---
+
+    /**
+     * @tweakable Allow MPE (Multi-Party Events) uploaded songs to show up in the playlist
+     */
+    let SHOW_MPE_UPLOADS_IN_PLAYLIST = true;
+
+    /**
+     * @tweakable If true, MPE uploads appear before user uploads and asset tracks in playlist
+     */
+    let MPE_UPLOADS_FIRST = true;
+
+    /**
+     * @tweakable Maximum number of recent mpe uploaded tracks (per session) to include in playlist
+     */
+    let MPE_MAX_TRACKS = 10;
+
+    /**
+     * @tweakable Custom label prefix for MPE uploaded tracks in playlist
+     */
+    let MPE_UPLOADED_PREFIX = "[MPE] ";
+
+    // --- Main MPE Uploader Integration ---
+    // To demonstrate: We'll simulate "MPE uploaded tracks" via a global for now.
+    // In a real Multi-Party Event session, this would be replaced by sockets or record-list sync.
+
+    // Simulated structure: Each "mpeUpload" is { name, src (blob url), uploader }
+    /** @type {{name: string, src: string, uploader: string}[]} */
+    let mpeUploadedTracks = []; // In real app, sync this with multiplayer uploader records!
+
+    function addMpeUploadedTrack(mpeFile, uploader="Someone") {
+      // Accepts File, returns a promise when added to mpeUploadedTracks.
+      if (!SHOW_MPE_UPLOADS_IN_PLAYLIST) return;
+      const url = URL.createObjectURL(mpeFile);
+      // Truncate array if exceeds max
+      if (mpeUploadedTracks.length >= MPE_MAX_TRACKS) mpeUploadedTracks.shift();
+      mpeUploadedTracks.push({
+        name: mpeFile.name.replace(/\.[^/.]+$/, ""), 
+        src: url, 
+        uploader: uploader,
+        display: (MPE_UPLOADED_PREFIX + (PLAYLIST_TITLES_ALL_CAPS ? mpeFile.name.replace(/\.[^/.]+$/, "").toUpperCase() : mpeFile.name.replace(/\.[^/.]+$/, "")
+      ))});
+      refreshMusicPlaylist();
+    }
+
+    // Hook for testing/demo: Press Ctrl+U to add a demo MPE upload (simulate user sending song)
+    window.addEventListener("keydown", async (e) => {
+      if (e.ctrlKey && e.key.toLowerCase() === "u") {
+        // Demo: Open file picker and simulate as if received from MPE session
+        let picker = document.createElement('input');
+        picker.type = 'file';
+        picker.accept = 'audio/*';
+        picker.multiple = false;
+        picker.style.display = "none";
+        document.body.appendChild(picker);
+        picker.click();
+        picker.onchange = function(ev) {
+          if (!picker.files || !picker.files.length) return;
+          for (const file of picker.files) {
+            addMpeUploadedTrack(file, "DemoUser");
+          }
+        };
+        setTimeout(() => { picker.remove(); }, 2100);
+      }
+    });
+
+    // Update: Playlist source MGMT.
+    // MPE ➔ User uploads ➔ Asset tracks  (if MPE_UPLOADS_FIRST, else ... after assets)
+    function refreshMusicPlaylist() {
+      buildPlaylistFromTweakables();
+
+      let showMPETracks = SHOW_MPE_UPLOADS_IN_PLAYLIST ? mpeUploadedTracks.slice(-MPE_MAX_TRACKS) : [];
+      let mpe = showMPETracks.map(t => ({
+        ...t,
+        display: t.display || (MPE_UPLOADED_PREFIX + (PLAYLIST_TITLES_ALL_CAPS ? t.name.toUpperCase() : t.name))
+      }));
+
+      if (MPE_UPLOADS_FIRST) {
+        if (USER_UPLOADS_FIRST) {
+          // MPE ➔ User uploads ➔ Asset tracks
+          musicPlaylist = [...mpe, ...userTracks, ...assetTracks];
+        } else {
+          // MPE ➔ Asset tracks ➔ User uploads
+          musicPlaylist = [...mpe, ...assetTracks, ...userTracks];
+        }
+      } else {
+        // User uploads/Asset tracks ➔ MPE
+        if (USER_UPLOADS_FIRST) {
+          musicPlaylist = [...userTracks, ...assetTracks, ...mpe];
+        } else {
+          musicPlaylist = [...assetTracks, ...userTracks, ...mpe];
+        }
+      }
+      refreshPlaylistUI();
+    }
+
+    // Optionally: Show uploader name in playlist UI as tooltip
+    function refreshPlaylistUI() {
+      playlistList.innerHTML = '';
+      if (!musicPlaylist.length) {
+        playlistList.innerHTML = "<li>No tracks.</li>";
+        return;
+      }
+      playlistList.style.maxHeight = (PLAYLIST_MAX_VISIBLE_ITEMS * 24) + "px";
+      musicPlaylist.forEach((track, idx) => {
+        let li = document.createElement("li");
+        let displayName = track.display || (PLAYLIST_TITLES_ALL_CAPS ? track.name.toUpperCase() : track.name) || "Unknown";
+        li.textContent = ((currentTrackIndex === idx) ? "▶ " : "") + displayName;
+        li.style.cursor = "pointer";
+        li.style.padding = '2px 0';
+        if (currentTrackIndex === idx) { 
+          li.style.fontWeight = 'bold'; 
+          li.style.color = PLAYLIST_HIGHLIGHT_COLOR;
+        }
+        // Tooltip with uploader if present
+        if (track.uploader) {
+          li.title = "Uploaded by " + track.uploader;
+        }
+        li.onclick = () => playTrack(idx, true);
+        playlistList.appendChild(li);
+      });
+    }
+
+    // --- END MPE INTEGRATION ---
+
+    // Main playlist system (update for new tracks/assets)
+    let musicPlaylist = [];
+    let userTracks = [];
+    let assetTracks = [];
+
+    // Convert playlist tweakable into track array
+    function buildPlaylistFromTweakables() {
+      assetTracks = (ONLY_INCLUDE_ENABLED_TRACKS
+        ? DEFAULT_PLAYLIST_TRACKS.filter(t=>t.enabled !== false)
+        : DEFAULT_PLAYLIST_TRACKS
+      ).map(t => ({
+        ...t,
+        display: PLAYLIST_TITLES_ALL_CAPS ? t.name.toUpperCase() : t.name
+      }));
+    }
+
+    // Add uploaded and asset tracks into playlist, honoring USER_UPLOADS_FIRST
+    // function refreshMusicPlaylist() {
+    //   buildPlaylistFromTweakables();
+    //   if (USER_UPLOADS_FIRST) {
+    //     musicPlaylist = [...userTracks, ...assetTracks];
+    //   } else {
+    //     musicPlaylist = [...assetTracks, ...userTracks];
+    //   }
+    //   refreshPlaylistUI();
+    // }
+
+    // Music playlist UI/render
+    // function refreshPlaylistUI() {
+    //   playlistList.innerHTML = '';
+    //   if (!musicPlaylist.length) {
+    //     playlistList.innerHTML = "<li>No tracks.</li>";
+    //     return;
+    //   }
+    //   playlistList.style.maxHeight = (PLAYLIST_MAX_VISIBLE_ITEMS * 24) + "px";
+    //   musicPlaylist.forEach((track, idx) => {
+    //     let li = document.createElement("li");
+    //     let displayName = track.display || (PLAYLIST_TITLES_ALL_CAPS ? track.name.toUpperCase() : track.name) || "Unknown";
+    //     li.textContent = ((currentTrackIndex === idx) ? "▶ " : "") + displayName;
+    //     li.style.cursor = "pointer";
+    //     li.style.padding = '2px 0';
+    //     if (currentTrackIndex === idx) { 
+    //       li.style.fontWeight = 'bold'; 
+    //       li.style.color = PLAYLIST_HIGHLIGHT_COLOR;
+    //     }
+    //     li.onclick = () => playTrack(idx, true);
+    //     playlistList.appendChild(li);
+    //   });
+    // }
+
+    let currentTrackIndex = DEFAULT_FIRST_TRACK_INDEX;
+    let musicAudio = null;
+    let isMusicMuted = GAME_MUSIC_MUTED;
+
+    // Add a user-uploaded file to playlist and UI
+    const musicUploadInput = document.getElementById('musicUpload');
+    musicUploadInput.addEventListener('change', function(e) {
+      const files = Array.from(e.target.files || []);
+      files.forEach(file => {
+        const url = URL.createObjectURL(file);
+        userTracks.push({
+          name: file.name.replace(/\.[^/.]+$/, ""), 
+          src: url, 
+          type: "file",
+          display: PLAYLIST_TITLES_ALL_CAPS ? file.name.replace(/\.[^/.]+$/, "").toUpperCase() : file.name.replace(/\.[^/.]+$/, "")
+        });
+      });
+      musicUploadInput.value = null;
+      refreshMusicPlaylist();
+      // If adding and not playing, start first user file
+      if (userTracks.length && musicPlaylist.length === userTracks.length) {
+        playTrack(0, true);
+      }
+    });
+
+    function playTrack(idx, forceRestart = false) {
+      if (!musicPlaylist.length) return;
+      idx = Math.max(0, Math.min(idx, musicPlaylist.length-1));
+      if (idx === currentTrackIndex && !forceRestart && musicAudio && !musicAudio.ended && !musicAudio.paused) return;
+
+      currentTrackIndex = idx;
+      let trk = musicPlaylist[idx];
+
+      if (musicAudio) {
+        musicAudio.onended = null;
+        musicAudio.pause();
+        try { musicAudio.currentTime = 0; } catch {}
+      }
+      musicAudio = new Audio(trk.src);
+      musicAudio.volume = GAME_MUSIC_VOLUME;
+      musicAudio.muted = isMusicMuted;
+      musicAudio.loop = false;
+      const playPromise = musicAudio.play();
+      if (playPromise) playPromise.catch(()=>{});
+      musicAudio.onended = () => {
+        playNextTrack();
+      };
+      refreshPlaylistUI();
+    }
+    function playNextTrack() {
+      if (!musicPlaylist.length) return;
+      if (currentTrackIndex + 1 >= musicPlaylist.length) {
+        if (PLAYLIST_REPEAT) playTrack(0, true);
+        else {
+          playTrack(0, true);
+          musicAudio && musicAudio.pause();
+        }
+      } else {
+        playTrack(currentTrackIndex + 1, true);
+      }
+    }
+    function setMusicVolume(vol) {
+      GAME_MUSIC_VOLUME = vol;
+      if (musicAudio) musicAudio.volume = vol;
+    }
+
+    // On game start, refresh playlist system
+    window.addEventListener('DOMContentLoaded', function() {
+      // canvas, ctx, and tubePoints are all guaranteed initialized at this point!
+      tubePoints = calculateTubePoints(currentLevel);
+      buildPlaylistFromTweakables();
+      refreshMusicPlaylist();
+      if (!GAME_MUSIC_MUTED && musicPlaylist.length) {
+        playTrack(currentTrackIndex, true);
+      }
+      if (SHOW_PLAYLIST_ON_START) showPlaylistUI();
+    });
+
+    // Music controls, repeat, etc use new playlist array
+
+    // --- UI ELEMENTS ---
+    const musicUrlInput = document.getElementById('musicUrl');
+    const musicPlaylistDisplay = document.getElementById('musicPlaylistDisplay');
+    const playlistList = document.getElementById('playlistList');
+    const nextTrackBtn = document.getElementById('nextTrackBtn');
+    const closePlaylistBtn = document.getElementById('closePlaylistBtn');
+
+    // --- MUTE BUTTON ---
+    let muteBtn = document.createElement("button");
+    muteBtn.className = "control-button";
+    muteBtn.id = "muteMusicBtn";
+    muteBtn.style.position = "fixed";
+    muteBtn.style.bottom = "60px";
+    muteBtn.style.right = "20px";
+    muteBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+    muteBtn.title = "Mute/Unmute Music";
+    muteBtn.onclick = toggleMusicMute;
+    document.body.appendChild(muteBtn);
+
+    function toggleMusicMute() {
+      isMusicMuted = !isMusicMuted;
+      if (musicAudio) musicAudio.muted = isMusicMuted;
+      muteBtn.innerHTML = isMusicMuted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
+      muteBtn.title = isMusicMuted ? "Unmute Music" : "Mute Music";
+    }
+    // Init icon state
+    muteBtn.innerHTML = GAME_MUSIC_MUTED ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
+
+    // --- UI: open/close Playlist display
+    function showPlaylistUI() {
+      refreshPlaylistUI();
+      musicPlaylistDisplay.style.display = 'block';
+    }
+    function hidePlaylistUI() {
+      musicPlaylistDisplay.style.display = 'none';
+    }
+    closePlaylistBtn.onclick = hidePlaylistUI;
+    nextTrackBtn.onclick = playNextTrack;
+
+    // Hotkey: Ctrl+M
+    window.addEventListener('keydown', function(e){
+      if (e.ctrlKey && e.key.toLowerCase() === "m") {
+        if (musicPlaylistDisplay.style.display === "block") hidePlaylistUI();
+        else showPlaylistUI();
+      }
+    });
+
+    // Toolbar playlist button
+    let playlistBtn = document.createElement("button");
+    playlistBtn.className = "control-button";
+    playlistBtn.style.position = "fixed";
+    playlistBtn.style.top = "70px";
+    playlistBtn.style.right = "20px";
+    playlistBtn.innerHTML = '<i class="fas fa-music"></i>';
+    playlistBtn.title = "Show Playlist (Ctrl+M)";
+    playlistBtn.onclick = showPlaylistUI;
+    document.body.appendChild(playlistBtn);
+
+    // --- Setup DEMO mode controls and state ---
+    let demoModeActive = DEMO_MODE_AT_START;
+    let lastDemoMove = 0;
+    let lastDemoLaser = 0;
+    let lastDemoPause = 0;
+
+    // Insert DEMO badge if enabled
+    let demoBadge = null;
+    function updateDemoBadge() {
+      if (!demoBadge && demoModeActive) {
+        demoBadge = document.createElement("div");
+        demoBadge.textContent = "DEMO";
+        demoBadge.style.position = "fixed";
+        demoBadge.style.top = "25px";
+        demoBadge.style.left = "50%";
+        demoBadge.style.transform = "translateX(-50%)";
+        demoBadge.style.background = "rgba(0,0,0,0.65)";
+        demoBadge.style.padding = "8px 36px";
+        demoBadge.style.border = "2.5px solid #0f0";
+        demoBadge.style.color = "#0f0";
+        demoBadge.style.fontFamily = "'Press Start 2P', cursive";
+        demoBadge.style.fontSize = "22px";
+        demoBadge.style.zIndex = 1203;
+        demoBadge.style.letterSpacing = "2px";
+        demoBadge.className = "pulse";
+        document.body.appendChild(demoBadge);
+      } else if (demoBadge && !demoModeActive) {
+        demoBadge.remove();
+        demoBadge = null;
+      }
+    }
+
+    function _setDemoModeFlag(val) {
+      demoModeActive = !!val;
+      updateDemoBadge();
+      // Optionally, auto-play music in demo mode if tweakable enabled
+      if (demoModeActive && DEMO_MODE_PLAYS_MUSIC && musicPlaylist.length) {
+        playTrack(currentTrackIndex, true);
+      }
+    }
+
+    // --- DEMO mode AI logic with tweakable intervals ---
+    function runDemoAI(ts) {
+      if (!demoModeActive || !gameStarted || isPaused || gameOver || !tubePoints) return;
+      const now = ts / 1000.0; // seconds
+
+      // Move pseudo-randomly
+      if (now - lastDemoMove > DEMO_AI_MOVE_INTERVAL) {
+        lastDemoMove = now;
+        const dir = Math.random() < 0.48 ? -1 : 1;
+        playerSegment = (playerSegment + dir + tubePoints.length) % tubePoints.length;
+      }
+
+      // Simulate shooting
+      if (now - lastDemoLaser > DEMO_AI_LASER_INTERVAL && Math.random() < DEMO_AI_SHOOT_PROB) {
+        lastDemoLaser = now;
+        if (laserPower >= LASER_POWER_COST) {
+          laserPower -= LASER_POWER_COST;
+          playSfx("laser");
+          for (let i = -1; i <= 1; i++) {
+            bullets.push({
+              segment: (playerSegment + i + tubePoints.length) % tubePoints.length,
+              z: 50,
+              damage: 2
+            });
+          }
+        }
+      }
+
+      // Simulate (infrequent) pause/resume toggling
+      if (now - lastDemoPause > DEMO_AI_PAUSE_INTERVAL && Math.random() < DEMO_AI_PAUSE_PROB) {
+        lastDemoPause = now;
+        // Toggle pause
+        if (!isPaused) {
+          isPaused = true;
+          document.getElementById('pauseMenu').style.display = 'block';
+        } else {
+          isPaused = false;
+          document.getElementById('pauseMenu').style.display = 'none';
+        }
+      }
+    }
+
+    // Patch main loop: run DEMO logic each frame
+    const origGameLoop = gameLoop;
+    function patchedGameLoop(timestamp) {
+      if (demoModeActive) runDemoAI(timestamp);
+      origGameLoop(timestamp);
+    }
+    // Overwrite requestAnimationFrame start to call our wrapper
+    requestAnimationFrame(patchedGameLoop);
+
+    // Hide demo mode if player presses start
+    document.getElementById('startButton').addEventListener('click', () => {
+      _setDemoModeFlag(false);
+      startAtRandomLevel();
+      gameStarted = true;
+    });
+      
+    // If demoModeActive on start, auto-start the game after DOM loaded
+    window.addEventListener('DOMContentLoaded', function() {
+      if (DEMO_MODE_AT_START) {
+        demoModeActive = true;
+        setTimeout(() => {
+          if (!gameStarted) {
+            gameStarted = true;
+            isPaused = false;
+            startAtRandomLevel();
+            _setDemoModeFlag(true);
+          }
+        }, 90);
+      } else {
+        _setDemoModeFlag(false);
+      }
+      // (existing DOMContentLoaded playlist/music logic remains unchanged)
+    });
+
+    // Optional: if user interacts (mouse, key), exit demo and go to manual mode
+    ['keydown', 'mousedown', 'touchstart'].forEach(ev => {
+      window.addEventListener(ev, () => {
+        if (demoModeActive) {
+          _setDemoModeFlag(false);
+        }
+      }, { once: true });
+    });
+
+    // Add hotkey: D to (re)enable DEMO mode if player wants to watch again
+    window.addEventListener('keydown', (e) => {
+      if (e.key.toUpperCase() === 'D' && !demoModeActive) {
+        if (!gameStarted) {
+          _setDemoModeFlag(true);
+          gameStarted = true;
+          startAtRandomLevel();
+        } else {
+          _setDemoModeFlag(true);
+        }
+      }
+    });
+
+    // Keep badge UI in sync always
+    updateDemoBadge();
+
+    canvas.addEventListener('wheel', (e) => {
+      if (!isPaused && gameStarted) {
+        if (e.deltaY < 0) {
+          playerSegment = (playerSegment - 1 + tubePoints.length) % tubePoints.length;
+        } else {
+          playerSegment = (playerSegment + 1) % tubePoints.length;
+        }
+        e.preventDefault();
+      }
+    });
+
+    function handleGameOver() {
+      const gameOverScreen = document.createElement('div');
+      gameOverScreen.className = 'game-over';
+
+      const ranking = getPlayerRanking(score);
+      const isHighScore = ranking <= 10;
+
+      let content = `
+        <h2>GAME OVER</h2>
+        <p>Final Score: ${score}</p>
+        <div class="ranking">Rank: #${ranking}</div>
+      `;
+
+      if (isHighScore) {
+        content += `
+          <p style="color: #ff0">NEW HIGH SCORE!</p>
+          <input type="text" id="playerName" maxlength="3" placeholder="AAA" 
+              style="text-transform: uppercase; font-family: 'Press Start 2P'; margin: 10px;">
+        `;
+      }
+
+      content += `
+        <button onclick="restartGame()" class="control-button" style="margin-top: 20px;">
+          PLAY AGAIN
+        </button>
+        <button onclick="showLeaderboard()" class="control-button">
+          VIEW LEADERBOARD
+        </button>
+      `;
+
+      gameOverScreen.innerHTML = content;
+      document.body.appendChild(gameOverScreen);
+
+      if (isHighScore) {
+        const input = document.getElementById('playerName');
+        input.focus();
+        input.addEventListener('keyup', (e) => {
+          if (e.key === 'Enter' && input.value) {
+            saveHighScore(score, input.value.slice(0, 3).toUpperCase());
+            gameOverScreen.remove();
+            restartGame();
+          }
+        });
+      }
+    }
+
+    function getPlayerRanking(playerScore) {
+      return 1;
+    }
+
+    function showLeaderboard() {
+      const board = document.createElement('div');
+      board.className = 'leaderboard';
+
+      let content = `
+        <h2>HIGH SCORES</h2>
+      `;
+
+      content += `</table>
+        <button onclick="this.parentElement.remove()" class="control-button" style="margin-top: 20px;">
+          CLOSE
+        </button>
+      `;
+
+      board.innerHTML = content;
+      document.body.appendChild(board);
+    }
+
+    function saveHighScore(score, playerName) {
+      console.log('Saving high score:', score, playerName);
+    }
+
+    // --- Responsive canvas (resize) ---
+    function resizeCanvas() {
+      // Only debounce if not already queued
+      if (resizeTimeout) return;
+      resizeTimeout = setTimeout(() => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        // Whenever canvas size changes, recalculate tube path points for proper game scaling.
+        if (typeof calculateTubePoints === "function") {
+          tubePoints = calculateTubePoints(currentLevel);
+        }
+        resizeTimeout = null;
+      }, CANVAS_RESIZE_DEBOUNCE_MS);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    // Call resize early so canvas, ctx, and tubePoints are all set before any logic runs!
+    resizeCanvas();
+
+    /**
+     * @tweakable Starting tube shape (e.g. 'circle', 'star', 'diamond')
+     */
+    let TUBE_SHAPE = 'circle';
+
+    // Now tube calculation always gets valid canvas dimensions (initialized above!)
+    function calculateTubePoints(level) {
+      /**
+       * @tweakable How many segments does the tube have at base difficulty?
+       */
+      const tubeSegments = /* @tweakable tubes per level = */ BASE_TUBE_SEGMENTS + Math.max(0, (level - 1));
+      const shape = TUBE_SHAPE;
+
+      const points = [];
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      // baseRadius uses 30% of the smallest viewport dimension
+      const baseRadius = Math.min(canvas.width, canvas.height) * 0.3;
+
+      for (let i = 0; i < tubeSegments; i++) {
+        let angle = (i / tubeSegments) * Math.PI * 2;
+
+        // Add spiral offset and wave
+        let spiral =
+          Math.sin(
+            angle * (1 + 0.35 * level) + (level * 0.25)
+          ) *
+          0.4 *
+          baseRadius *
+          (level ? (0.45 + 0.04 * level) : 1);
+
+        let wavy = Math.sin(angle * 5.5 + level) * 0.3 * baseRadius;
+        let r = baseRadius + spiral + wavy;
+
+        switch (shape) {
+          case 'star':
+            r *= (1 + Math.sin(angle * 5) * 0.5);
+            break;
+          case 'diamond':
+            r *= Math.abs(Math.cos(angle) + Math.sin(angle));
+            break;
+          // fallback: (default) circle as above
+        }
+
+        points.push({
+          x: centerX + Math.cos(angle) * r,
+          y: centerY + Math.sin(angle) * r
+        });
+      }
+
+      return points;
+    }
+
+    // ========== Tweakable THREE.js 3D Initialization ==========
+    function initThreeJS() {
+      // Always (re)build the tubePoints for the initial/current level
+      if (!tubePoints || !tubePoints.length) {
+        tubePoints = calculateTubePoints(currentLevel || 1);
+      }
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(
+        THREEJS_CAMERA_FOV,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setClearColor(0x000000, 0);
+
+      // Neon Tube Geometry (ensure tubePoints always present here!)
+      const tubePath = new THREE.CatmullRomCurve3(
+        tubePoints.map(p =>
+          new THREE.Vector3(p.x - window.innerWidth / 2, p.y - window.innerHeight / 2, 0)
+        )
+      );
+
+      tubeGeometry = new THREE.TubeGeometry(
+        tubePath,
+        TUBE_CURVE_SEGMENTS, // segments along the tube
+        TUBE_RADIUS,         // radius
+        TUBE_RADIAL_SEGMENTS, 
+        false
+      );
+
+      neonTube = new THREE.Mesh(
+        tubeGeometry,
+        new THREE.MeshPhongMaterial({
+          color: TUBE_MESH_COLOR,
+          emissive: TUBE_MESH_EMISSIVE,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: TUBE_MESH_OPACITY
+        })
+      );
+      scene.add(neonTube);
+
+      // Lighting
+      const ambientLight = new THREE.AmbientLight(0x404040);
+      scene.add(ambientLight);
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+      directionalLight.position.set(0, 1, 0);
+      scene.add(directionalLight);
+
+      camera.position.z = THREEJS_CAMERA_Z;
+    }
+
+    // ========== Tweakable Enemy GLB Loader ==========
+    const loader = new THREE.GLTFLoader();
+    loader.load('enemy.glb', function(gltf) {
+      const model = gltf.scene;
+      model.traverse(child => {
+        if (child.isMesh) {
+          child.material.emissive = new THREE.Color(ENEMY_GLB_EMISSIVE_COLOR);
+          child.material.emissiveIntensity = ENEMY_GLB_EMISSIVE_INTENSITY;
+        }
+      });
+      enemyModels.push(model);
+    });
+
+    // ========== 3D Create Enemy ==========
+    function createEnemy() {
+      if (enemyModels.length === 0) return;
+
+      const enemy = enemyModels[0].clone();
+      const segment = Math.floor(Math.random() * tubePoints.length);
+      const position = new THREE.Vector3(
+        tubePoints[segment].x - window.innerWidth / 2,
+        tubePoints[segment].y - window.innerHeight / 2,
+        0
+      );
+
+      enemy.position.copy(position);
+      enemy.userData = {
+        segment,
+        z: TUBE_DEPTH,
+        speed: 0.1 * ENEMY_SPEED_MULTIPLIER
+      };
+
+      scene.add(enemy);
+      enemies.push(enemy);
+    }
+
+    // ---- (rest of JS) unchanged except "canvas" and "tubePoints" are now always initialized before use ----
+
+    function gameLoop(timestamp) {
+      if (lastTime === 0) {
+        lastTime = timestamp;
+      }
+      deltaTime = timestamp - lastTime;
+      lastTime = timestamp;
+
+      ctx.fillStyle = GAME_BG_COLOR; 
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      if (!gameStarted) {
+        ctx.font = TITLE_FONT;
+        ctx.fillStyle = '#0f0';
+        ctx.textAlign = 'center';
+        ctx.fillText('TEMPEST', canvas.width / 2, canvas.height / 2 - 200);
+      } else {
+        drawTube();
+        drawPlayer();
+        drawEnemies();
+        drawBullets();
+        ctx.font = GAME_SCORE_FONT;
+        ctx.fillStyle = '#0f0';
+        ctx.textAlign = 'right';
+        ctx.fillText(`Score: ${score}`, canvas.width - 20, 40);
+      }
+
+      if (!isPaused && !gameOver) {
+        update(deltaTime);
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function drawTube() {
+      if (!tubePoints || tubePoints.length === 0) return;
+      ctx.save();
+
+      // Create tube lines and glowing effects if enabled
+      // Apply spiral and wave for variety
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      // baseRadius uses 30% of the smallest viewport dimension
+      const baseRadius = Math.min(canvas.width, canvas.height) * 0.3;
+
+      // Draw background faded tube for neon effect
+      ctx.save();
+      ctx.globalAlpha = 0.7;
+      ctx.strokeStyle = "#0f0";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      for (let i = 0; i < tubePoints.length; i++) {
+        let pt = tubePoints[i];
+        if (i === 0) ctx.moveTo(pt.x, pt.y);
+        else ctx.lineTo(pt.x, pt.y);
+      }
+      ctx.closePath();
+      ctx.stroke();
+      ctx.restore();
+
+      // Main tube
+      ctx.save();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = "#0f0";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i < tubePoints.length; i++) {
+        let pt = tubePoints[i];
+        if (i === 0) ctx.moveTo(pt.x, pt.y);
+        else ctx.lineTo(pt.x, pt.y);
+      }
+      ctx.closePath();
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.restore();
+    }
+
+    function drawEnemies() {
+      if (!enemies || !enemies.length || !tubePoints) return;
+
+      enemies.forEach(enemy => {
+        if (!enemy || typeof enemy.segment === 'undefined' || typeof enemy.z === 'undefined') return;
+
+        const segment = tubePoints[enemy.segment];
+        if (!segment) return;
+
+        const nextSegment = tubePoints[(enemy.segment + 1) % tubePoints.length];
+        if (!nextSegment) return;
+
+        const midX = (segment.x + nextSegment.x) / 2;
+        const midY = (segment.y + nextSegment.y) / 2;
+        const projected = project(midX, midY, enemy.z);
+
+        ctx.beginPath();
+        ctx.fillStyle = "#f00";
+        ctx.arc(projected.x, projected.y, ENEMY_RADIUS, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function createEnemy() {
+      const segment = Math.floor(Math.random() * tubePoints.length);
+      enemies.push({
+        segment,
+        z: TUBE_DEPTH
+      });
+    }
+
+    function triggerLevelUpSfx() {
+      if (document.getElementById('soundEnabled') && document.getElementById('soundEnabled').checked && !MUTE_ALL_SFX) {
+        playSfx("levelUp");
+      }
+    }
+
+    function startAtRandomLevel() {
+      let min = Math.floor(RANDOM_LEVEL_START_MIN);
+      let max = Math.floor(RANDOM_LEVEL_START_MAX);
+      if (max < min) [min, max] = [max, min];
+      currentLevel = Math.floor(Math.random() * (max - min + 1)) + min;
+      document.getElementById('levelDisplay').textContent = currentLevel;
+      tubePoints = calculateTubePoints(currentLevel);
+      laserPower = LASER_POWER_MAX;
+      killCount = 0;
+      score = 0;
+    }
+
+    document.getElementById('startButton').addEventListener('click', () => {
+      startAtRandomLevel();
+      gameStarted = true;
+    });
+
+    function restartGame() {
+      gameStarted = false;
+      gameOver = false;
+      isPaused = false;
+      score = 0;
+      laserPower = LASER_POWER_MAX;
+      playerSegment = 0;
+      killCount = 0;
+      startAtRandomLevel();
+
+      bullets = [];
+      enemies = [];
+      particles = [];
+
+      document.getElementById('pauseMenu').style.display = 'none';
+      
+      document.querySelectorAll('.game-over, .leaderboard').forEach(el => el.remove());
+
+      stopGameMusic();
+    }
+
+    function resumeGame() {
+      if (gameStarted && isPaused) {
+        isPaused = false;
+        document.getElementById('pauseMenu').style.display = 'none';
+      }
+    }
+
+    function update(deltaTime) {
+      if (isPaused || gameOver || !gameStarted || !tubePoints) return;
+
+      if (laserPower < LASER_POWER_MAX) {
+        laserPower += LASER_POWER_REGEN;
+      }
+
+      bullets = bullets.filter(bullet => {
+        if (!bullet || typeof bullet.z === 'undefined') return false;
+        bullet.z += 30;
+        return bullet.z < TUBE_DEPTH;
+      });
+
+      enemies = enemies.filter(enemy => {
+        if (!enemy || typeof enemy.z === 'undefined' || typeof enemy.segment === 'undefined') {
+          return false;
+        }
+
+        enemy.z -= 2 * (1 + currentLevel * 0.1) * ENEMY_SPEED_MULTIPLIER;
+
+        if (enemy.z <= 50 && enemy.segment === playerSegment) {
+          gameOver = true;
+          setTimeout(handleGameOver, 100);
+          return false;
+        }
+
+        let destroyed = false;
+        bullets = bullets.filter((bullet, bulletIndex) => {
+          if (!bullet || typeof bullet.z === 'undefined' || typeof bullet.segment === 'undefined') {
+            return false;
+          }
+
+          if (Math.abs(bullet.z - enemy.z) < 20 && bullet.segment === enemy.segment) {
+            score += ENEMY_KILL_SCORE;
+            destroyed = true;
+            const seg = tubePoints[enemy.segment];
+            const nseg = tubePoints[(enemy.segment + 1) % tubePoints.length];
+            const mx = (seg.x + nseg.x) / 2;
+            const my = (seg.y + nseg.y) / 2;
+            createExplosion(mx, my);
+            return false;
+          }
+          return true;
+        });
+
+        if (destroyed) {
+          killCount++;
+          if (killCount >= KILLS_TO_LEVEL_UP) {
+            currentLevel++;
+            killCount = 0;
+            document.getElementById('levelDisplay').textContent = currentLevel;
+            tubePoints = calculateTubePoints(currentLevel);
+            laserPower = LASER_POWER_MAX;
+            triggerLevelUpSfx();
+          }
+          return false;
+        }
+        return enemy.z > 0;
+      });
+
+      if (Math.random() < 0.02 * (1 + currentLevel * 0.15)) {
+        createEnemy();
+      }
+
+      updateParticles();
+    }
+
+    function project(x, y, z) {
+      const scale = 4000 / (4000 + z * 0.8);
+      return {
+        x: canvas.width / 2 + (x - canvas.width / 2) * scale,
+        y: canvas.height / 2 + (y - canvas.height / 2) * scale
+      };
+    }
+
+    function _gameOverHook() {
+      stopGameMusic();
+    }
+
+    function stopGameMusic() {
+      if (musicAudio) {
+        musicAudio.pause();
+        try { musicAudio.currentTime = 0;} catch {}
+      }
+    }
+
+    function spawnConfetti(x, y) {
+      for (let i = 0; i < CONFETTI_PARTICLE_COUNT; i++) {
+        const confDiv = document.createElement('div');
+        confDiv.className = "confetti";
+        const size = Math.random() * 
+          (CONFETTI_SIZE_RANGE[1] - CONFETTI_SIZE_RANGE[0]) + CONFETTI_SIZE_RANGE[0];
+        const color = CONFETTI_COLORS[Math.floor(Math.random()*CONFETTI_COLORS.length)];
+        const angle = (Math.random() - 0.5) * CONFETTI_SPREAD_DEGREES * Math.PI/180;
+        const velocity = Math.random() * 8 + 4; 
+        const vx = Math.cos(angle) * velocity;
+        const vy = Math.sin(angle) * velocity - 5; 
+        confDiv.style.position = 'fixed';
+        confDiv.style.left = (x-size/2) + "px";
+        confDiv.style.top  = (y-size/2) + "px";
+        confDiv.style.width = size + "px";
+        confDiv.style.height = size + "px";
+        confDiv.style.background = color;
+        confDiv.style.borderRadius = "50%";
+        confDiv.style.pointerEvents = "none";
+        confDiv.style.zIndex = 1200;
+        confDiv.style.opacity = 0.92;
+        confDiv.style.transform = `rotate(${Math.random()*360|0}deg)`;
+        confDiv.style.boxShadow = `0 0 8px ${color}`;
+        document.body.appendChild(confDiv);
+
+        let conf_x = x, conf_y = y, conf_vx = vx, conf_vy = vy;
+        let steps = Math.max(10, CONFETTI_ANIMATION_DURATION/16);
+        let frame = 0;
+        function animate() {
+          conf_x += conf_vx;
+          conf_y += conf_vy;
+          conf_vy += CONFETTI_GRAVITY;
+          confDiv.style.left = (conf_x - size/2) + "px";
+          confDiv.style.top = (conf_y - size/2) + "px";
+          confDiv.style.opacity = Math.max(0, 0.92 * (1 - frame/steps));
+          if (++frame < steps) {
+            requestAnimationFrame(animate);
+          } else if (confDiv.parentElement) {
+            confDiv.remove();
+          }
+        }
+        animate();
+      }
+    }
+
+    function playSfx(name, options = {}) {
+      if (MUTE_ALL_SFX) return;
+      const now = Date.now();
+      if ((now - (sfxLastPlayed[name] || 0)) < SFX_MIN_INTERVAL_MS) return;
+      sfxLastPlayed[name] = now;
+      let path = SFX_PATHS[name];
+      if (!path) return;
+      let audio = new Audio(path);
+      let relVol = 1.0;
+      switch (name) {
+        case "explosion": relVol = EXPLOSION_VOLUME; break;
+        case "laser": relVol = LASER_VOLUME; break;
+        case "levelUp": relVol = LEVEL_UP_VOLUME; break;
+      }
+      audio.volume = Math.max(0.0, Math.min(1.0, relVol * SFX_VOLUME));
+      audio.play().catch(()=>{});
+    }
+
+    function createExplosion(x, y) {
+      if (document.getElementById('soundEnabled') && document.getElementById('soundEnabled').checked && !MUTE_ALL_SFX) {
+        playSfx("explosion");
+      }
+      for (let i = 0; i < 32; i++) {
+        particles.push(new Particle(x, y));
+      }
+      spawnConfetti(x, y);
+    }
+
+    class Particle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+        this.velocity = {
+          x: (Math.random() - 0.5) * 10,
+          y: (Math.random() - 0.5) * 10 - 5
+        };
+        this.gravity = 0.5;
+        this.life = 1;
+        this.decay = Math.random() * 0.02 + 0.02;
+      }
+      update() {
+        this.velocity.y += this.gravity;
+        this.x += this.velocity.x;
+        this.y += this.velocity.y;
+        this.life -= this.decay;
+      }
+      draw(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.life;
+        ctx.fillRect(this.x, this.y, 5, 5);
+        ctx.globalAlpha = 1;
+      }
+    }
+    let sfxLastPlayed = {
+      explosion: 0,
+      laser: 0,
+      levelUp: 0
+    };
+    const SFX_PATHS = {
+      explosion: "/explosion_sound.mp3",
+      laser: "/laser_sound.mp3",
+      levelUp: "/level_up_sound.mp3"
+    };
+
+    function updateParticles() {
+      particles = particles.filter(particle => {
+        particle.update();
+        particle.draw(ctx);
+        return particle.life > 0;
+      });
+    }
+
+    function drawPlayer() {
+      if (!tubePoints || !tubePoints.length) return;
+
+      const segment = tubePoints[playerSegment];
+      const nextSegment = tubePoints[(playerSegment + 1) % tubePoints.length];
+
+      if (!segment || !nextSegment) return;
+
+      const midX = (segment.x + nextSegment.x) / 2;
+      const midY = (segment.y + nextSegment.y) / 2;
+      const projected = project(midX, midY, 50);
+
+      ctx.beginPath();
+      ctx.fillStyle = "#0f0";
+      ctx.arc(projected.x, projected.y, PLAYER_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawBullets() {
+      if (!bullets || !bullets.length || !tubePoints) return;
+
+      bullets.forEach(bullet => {
+        if (!bullet || typeof bullet.segment === 'undefined' || typeof bullet.z === 'undefined') return;
+
+        const segment = tubePoints[bullet.segment];
+        if (!segment) return;
+
+        const nextSegment = tubePoints[(bullet.segment + 1) % tubePoints.length];
+        if (!nextSegment) return;
+
+        const midX = (segment.x + nextSegment.x) / 2;
+        const midY = (segment.y + nextSegment.y) / 2;
+        const projected = project(midX, midY, bullet.z);
+
+        ctx.beginPath();
+        ctx.fillStyle = "#f00";
+        ctx.arc(projected.x, projected.y, BULLET_RADIUS, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    gameLoop();
+  </script>
+</body>
+</html>
